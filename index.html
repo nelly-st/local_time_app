@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101526">
+    <meta name="description" content="See your local time and check the time in cities around the world.">
+    <title>Local Time — Around the clock</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        --background: #101526;
+        --panel: #202c45;
+        --muted: #9ba7bd;
+        --text: #f5f7fc;
+        --accent: #a9f0d1;
+        --border: rgba(255, 255, 255, 0.1);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        min-width: 320px;
+        min-height: 100vh;
+        margin: 0;
+        color: var(--text);
+        background:
+          radial-gradient(ellipse at 82% 5%, rgba(84, 106, 169, 0.24), transparent 34rem),
+          radial-gradient(ellipse at 8% 90%, rgba(69, 144, 123, 0.12), transparent 30rem),
+          var(--background);
+      }
+
+      button, select { font: inherit; }
+
+      .shell {
+        width: min(1080px, calc(100% - 48px));
+        margin: 0 auto;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 30px 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        color: #12221f;
+        background: var(--accent);
+        border-radius: 11px;
+      }
+
+      .header-note {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      main { padding: 68px 0 48px; }
+
+      .intro { margin-bottom: 35px; }
+
+      .eyebrow {
+        margin: 0 0 13px;
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 750;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(34px, 6vw, 56px);
+        font-weight: 580;
+        letter-spacing: -0.06em;
+        line-height: 1.08;
+      }
+
+      .intro-copy {
+        max-width: 490px;
+        margin: 15px 0 0;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.65;
+      }
+
+      .clock-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+
+      .clock-card, .selector-card {
+        overflow: hidden;
+        border: 1px solid rgba(191, 207, 237, 0.17);
+        border-radius: 20px;
+        background: linear-gradient(145deg, #273653, #202c45 70%);
+        box-shadow: 0 18px 55px rgba(0, 0, 0, 0.28);
+        backdrop-filter: blur(16px);
+      }
+
+      .clock-card { min-height: 280px; padding: 28px; }
+
+      .card-topline {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .card-label {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        color: #dbe3ef;
+        font-size: 13px;
+        font-weight: 650;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 14px rgba(169, 240, 209, 0.7);
+      }
+
+      .timezone {
+        max-width: 55%;
+        overflow: hidden;
+        color: var(--muted);
+        font-size: 11px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .time-comparison {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 30px;
+      }
+
+      .time-label {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 650;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .clock {
+        margin: 9px 0 0;
+        font-size: clamp(28px, 4.2vw, 46px);
+        font-variant-numeric: tabular-nums;
+        font-weight: 520;
+        letter-spacing: -0.065em;
+        line-height: 1;
+      }
+
+      .solar-clock { color: var(--accent); }
+
+      .date {
+        color: #bdc7d7;
+        font-size: 14px;
+      }
+
+      .card-foot {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 28px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .location-action {
+        padding: 0;
+        border: 0;
+        color: var(--accent);
+        background: transparent;
+        cursor: pointer;
+        font-size: 12px;
+        text-decoration: underline;
+        text-decoration-color: rgba(169, 240, 209, 0.4);
+        text-underline-offset: 3px;
+      }
+
+      .location-action:hover { text-decoration-color: currentColor; }
+      .location-action:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+      .selector-card {
+        grid-column: 1 / -1;
+        padding: 28px;
+      }
+
+      .selector-heading {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 650;
+        letter-spacing: -0.02em;
+      }
+
+      .selector-copy {
+        margin: 7px 0 22px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .select-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+
+      .field label {
+        display: block;
+        margin-bottom: 8px;
+        color: #c6cfdd;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      select {
+        width: 100%;
+        min-height: 48px;
+        padding: 0 40px 0 14px;
+        border: 1px solid #cbd4e2;
+        border-radius: 10px;
+        color: #172033;
+        background-color: #e8edf5;
+        cursor: pointer;
+      }
+
+      select:disabled { color: #697386; background-color: #d5dce7; cursor: not-allowed; }
+      option { color: #172033; background: #e8edf5; }
+
+      .notice {
+        min-height: 18px;
+        margin: 13px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      footer {
+        padding: 22px 0 32px;
+        border-top: 1px solid var(--border);
+        color: #7f8ba2;
+        font-size: 12px;
+      }
+
+      @media (max-width: 680px) {
+        .shell { width: min(100% - 32px, 520px); }
+        header { padding: 22px 0; }
+        .header-note { max-width: 130px; text-align: right; }
+        main { padding-top: 48px; }
+        .clock-grid { grid-template-columns: 1fr; }
+        .clock-card { min-height: 250px; padding: 24px; }
+        .selector-card { grid-column: auto; padding: 24px; }
+      }
+
+      @media (max-width: 420px) {
+        .select-row { grid-template-columns: 1fr; gap: 13px; }
+        .timezone { max-width: 46%; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <div class="brand"><span class="brand-mark" aria-hidden="true">◷</span> Local Time</div>
+        <div class="header-note">A little closer to everywhere</div>
+      </header>
+
+      <main>
+        <section class="intro" aria-labelledby="page-title">
+          <p class="eyebrow">Your time, wherever you are</p>
+          <h1>Every place has<br>its own moment.</h1>
+          <p class="intro-copy">See official clock time beside apparent solar time for your location or a city anywhere in the world.</p>
+        </section>
+
+        <section class="clock-grid" aria-label="Local and selected city clocks">
+          <article class="clock-card" aria-labelledby="local-heading">
+            <div class="card-topline">
+              <div class="card-label" id="local-heading"><span class="status-dot" aria-hidden="true"></span>Your local time</div>
+              <span class="timezone" id="local-timezone"></span>
+            </div>
+            <div class="time-comparison">
+              <div>
+                <div class="time-label">Official local time</div>
+                <div class="clock" id="local-clock" aria-live="off">--:--:--</div>
+              </div>
+              <div>
+                <div class="time-label">Apparent solar time</div>
+                <div class="clock solar-clock" id="local-solar" aria-live="off">--:--:--</div>
+              </div>
+            </div>
+            <div class="date" id="local-date">Loading your local time…</div>
+            <div class="card-foot">
+              <span id="location-status">Using your device's local time zone</span>
+              <button class="location-action" id="location-button" type="button">Use my location</button>
+            </div>
+          </article>
+
+          <article class="clock-card" aria-labelledby="city-heading">
+            <div class="card-topline">
+              <div class="card-label" id="city-heading"><span class="status-dot" aria-hidden="true"></span>Selected city</div>
+              <span class="timezone" id="city-timezone">Choose a city below</span>
+            </div>
+            <div class="time-comparison">
+              <div>
+                <div class="time-label">Official local time</div>
+                <div class="clock" id="city-clock" aria-live="off">--:--:--</div>
+              </div>
+              <div>
+                <div class="time-label">Apparent solar time</div>
+                <div class="clock solar-clock" id="city-solar" aria-live="off">--:--:--</div>
+              </div>
+            </div>
+            <div class="date" id="city-date">Your selected city's local time</div>
+            <div class="card-foot" id="city-offset">Select a country and city to get started</div>
+          </article>
+
+          <section class="selector-card" aria-labelledby="selector-heading">
+            <h2 class="selector-heading" id="selector-heading">Find a time somewhere else</h2>
+            <p class="selector-copy">Choose a country, then pick a city from the list.</p>
+            <div class="select-row">
+              <div class="field">
+                <label for="country-select">Country</label>
+                <select id="country-select">
+                  <option value="">Select a country</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="city-select">City</label>
+                <select id="city-select" disabled>
+                  <option value="">Choose a country first</option>
+                </select>
+              </div>
+            </div>
+            <p class="notice" id="notice" role="status">Apparent solar time is calculated from longitude and the equation of time; latitude helps identify your location but does not change the solar clock reading. Allow location access to show your own solar time.</p>
+          </section>
+        </section>
+      </main>
+
+      <footer>Time zones are provided by your browser's built-in internationalization support.</footer>
+    </div>
+
+    <script>
+      const places = {
+        "Argentina": [
+          { city: "Buenos Aires", zone: "America/Argentina/Buenos_Aires" },
+          { city: "Mendoza", zone: "America/Argentina/Mendoza" }
+        ],
+        "Australia": [
+          { city: "Adelaide", zone: "Australia/Adelaide" },
+          { city: "Brisbane", zone: "Australia/Brisbane" },
+          { city: "Melbourne", zone: "Australia/Melbourne" },
+          { city: "Perth", zone: "Australia/Perth" },
+          { city: "Sydney", zone: "Australia/Sydney" }
+        ],
+        "Brazil": [
+          { city: "Brasilia", zone: "America/Sao_Paulo" },
+          { city: "Manaus", zone: "America/Manaus" },
+          { city: "Rio de Janeiro", zone: "America/Sao_Paulo" },
+          { city: "Sao Paulo", zone: "America/Sao_Paulo" }
+        ],
+        "Bulgaria": [
+          { city: "Plovdiv", zone: "Europe/Sofia" },
+          { city: "Sofia", zone: "Europe/Sofia" },
+          { city: "Varna", zone: "Europe/Sofia" }
+        ],
+        "Canada": [
+          { city: "Calgary", zone: "America/Edmonton" },
+          { city: "Halifax", zone: "America/Halifax" },
+          { city: "Montreal", zone: "America/Toronto" },
+          { city: "St. John's", zone: "America/St_Johns" },
+          { city: "Toronto", zone: "America/Toronto" },
+          { city: "Vancouver", zone: "America/Vancouver" },
+          { city: "Winnipeg", zone: "America/Winnipeg" }
+        ],
+        "China": [
+          { city: "Beijing", zone: "Asia/Shanghai" },
+          { city: "Shanghai", zone: "Asia/Shanghai" }
+        ],
+        "Egypt": [
+          { city: "Cairo", zone: "Africa/Cairo" }
+        ],
+        "France": [
+          { city: "Paris", zone: "Europe/Paris" }
+        ],
+        "Germany": [
+          { city: "Berlin", zone: "Europe/Berlin" },
+          { city: "Munich", zone: "Europe/Berlin" }
+        ],
+        "India": [
+          { city: "Bengaluru", zone: "Asia/Kolkata" },
+          { city: "Kolkata", zone: "Asia/Kolkata" },
+          { city: "Mumbai", zone: "Asia/Kolkata" },
+          { city: "New Delhi", zone: "Asia/Kolkata" }
+        ],
+        "Estonia": [
+          { city: "Tallinn", zone: "Europe/Tallinn" },
+          { city: "Tartu", zone: "Europe/Tallinn" }
+        ],
+        "Indonesia": [
+          { city: "Jakarta", zone: "Asia/Jakarta" },
+          { city: "Makassar", zone: "Asia/Makassar" }
+        ],
+        "Ireland": [
+          { city: "Cork", zone: "Europe/Dublin" },
+          { city: "Dublin", zone: "Europe/Dublin" },
+          { city: "Galway", zone: "Europe/Dublin" }
+        ],
+        "Italy": [
+          { city: "Milan", zone: "Europe/Rome" },
+          { city: "Rome", zone: "Europe/Rome" }
+        ],
+        "Japan": [
+          { city: "Osaka", zone: "Asia/Tokyo" },
+          { city: "Tokyo", zone: "Asia/Tokyo" }
+        ],
+        "Kenya": [
+          { city: "Nairobi", zone: "Africa/Nairobi" }
+        ],
+        "Mexico": [
+          { city: "Cancun", zone: "America/Cancun" },
+          { city: "Mexico City", zone: "America/Mexico_City" },
+          { city: "Tijuana", zone: "America/Tijuana" }
+        ],
+        "New Zealand": [
+          { city: "Auckland", zone: "Pacific/Auckland" },
+          { city: "Wellington", zone: "Pacific/Auckland" }
+        ],
+        "Nigeria": [
+          { city: "Lagos", zone: "Africa/Lagos" }
+        ],
+        "Pakistan": [
+          { city: "Karachi", zone: "Asia/Karachi" }
+        ],
+        "Philippines": [
+          { city: "Manila", zone: "Asia/Manila" }
+        ],
+        "Russia": [
+          { city: "Moscow", zone: "Europe/Moscow" },
+          { city: "Vladivostok", zone: "Asia/Vladivostok" }
+        ],
+        "Saudi Arabia": [
+          { city: "Riyadh", zone: "Asia/Riyadh" }
+        ],
+        "Singapore": [
+          { city: "Singapore", zone: "Asia/Singapore" }
+        ],
+        "South Africa": [
+          { city: "Cape Town", zone: "Africa/Johannesburg" },
+          { city: "Johannesburg", zone: "Africa/Johannesburg" }
+        ],
+        "South Korea": [
+          { city: "Seoul", zone: "Asia/Seoul" }
+        ],
+        "Spain": [
+          { city: "Barcelona", zone: "Europe/Madrid" },
+          { city: "Madrid", zone: "Europe/Madrid" }
+        ],
+        "Thailand": [
+          { city: "Bangkok", zone: "Asia/Bangkok" }
+        ],
+        "Turkey": [
+          { city: "Istanbul", zone: "Europe/Istanbul" }
+        ],
+        "United Arab Emirates": [
+          { city: "Dubai", zone: "Asia/Dubai" }
+        ],
+        "United Kingdom": [
+          { city: "Edinburgh", zone: "Europe/London" },
+          { city: "London", zone: "Europe/London" }
+        ],
+        "United States": [
+          { city: "Anchorage", zone: "America/Anchorage" },
+          { city: "Chicago", zone: "America/Chicago" },
+          { city: "Denver", zone: "America/Denver" },
+          { city: "Honolulu", zone: "Pacific/Honolulu" },
+          { city: "Los Angeles", zone: "America/Los_Angeles" },
+          { city: "New York", zone: "America/New_York" },
+          { city: "Phoenix", zone: "America/Phoenix" }
+        ]
+      };
+
+      const coordinates = {
+        "Argentina": { "Buenos Aires": [-34.6037, -58.3816], "Mendoza": [-32.8895, -68.8458] },
+        "Australia": { "Adelaide": [-34.9285, 138.6007], "Brisbane": [-27.4698, 153.0251], "Melbourne": [-37.8136, 144.9631], "Perth": [-31.9505, 115.8605], "Sydney": [-33.8688, 151.2093] },
+        "Brazil": { "Brasilia": [-15.7939, -47.8828], "Manaus": [-3.119, -60.0217], "Rio de Janeiro": [-22.9068, -43.1729], "Sao Paulo": [-23.5505, -46.6333] },
+        "Bulgaria": { "Plovdiv": [42.1354, 24.7453], "Sofia": [42.6977, 23.3219], "Varna": [43.2141, 27.9147] },
+        "Canada": { "Calgary": [51.0447, -114.0719], "Halifax": [44.6488, -63.5752], "Montreal": [45.5019, -73.5674], "St. John's": [47.5615, -52.7126], "Toronto": [43.6532, -79.3832], "Vancouver": [49.2827, -123.1207], "Winnipeg": [49.8951, -97.1384] },
+        "China": { "Beijing": [39.9042, 116.4074], "Shanghai": [31.2304, 121.4737] },
+        "Egypt": { "Cairo": [30.0444, 31.2357] },
+        "Estonia": { "Tallinn": [59.437, 24.7536], "Tartu": [58.378, 26.729] },
+        "France": { "Paris": [48.8566, 2.3522] },
+        "Germany": { "Berlin": [52.52, 13.405], "Munich": [48.1351, 11.582] },
+        "India": { "Bengaluru": [12.9716, 77.5946], "Kolkata": [22.5726, 88.3639], "Mumbai": [19.076, 72.8777], "New Delhi": [28.6139, 77.209] },
+        "Indonesia": { "Jakarta": [-6.2088, 106.8456], "Makassar": [-5.1477, 119.4327] },
+        "Ireland": { "Cork": [51.8985, -8.4756], "Dublin": [53.3498, -6.2603], "Galway": [53.2707, -9.0568] },
+        "Italy": { "Milan": [45.4642, 9.19], "Rome": [41.9028, 12.4964] },
+        "Japan": { "Osaka": [34.6937, 135.5023], "Tokyo": [35.6762, 139.6503] },
+        "Kenya": { "Nairobi": [-1.2921, 36.8219] },
+        "Mexico": { "Cancun": [21.1619, -86.8515], "Mexico City": [19.4326, -99.1332], "Tijuana": [32.5149, -117.0382] },
+        "New Zealand": { "Auckland": [-36.8509, 174.7645], "Wellington": [-41.2866, 174.7756] },
+        "Nigeria": { "Lagos": [6.5244, 3.3792] },
+        "Pakistan": { "Karachi": [24.8607, 67.0011] },
+        "Philippines": { "Manila": [14.5995, 120.9842] },
+        "Russia": { "Moscow": [55.7558, 37.6173], "Vladivostok": [43.1155, 131.8855] },
+        "Saudi Arabia": { "Riyadh": [24.7136, 46.6753] },
+        "Singapore": { "Singapore": [1.3521, 103.8198] },
+        "South Africa": { "Cape Town": [-33.9249, 18.4241], "Johannesburg": [-26.2041, 28.0473] },
+        "South Korea": { "Seoul": [37.5665, 126.978] },
+        "Spain": { "Barcelona": [41.3874, 2.1686], "Madrid": [40.4168, -3.7038] },
+        "Thailand": { "Bangkok": [13.7563, 100.5018] },
+        "Turkey": { "Istanbul": [41.0082, 28.9784] },
+        "United Arab Emirates": { "Dubai": [25.2048, 55.2708] },
+        "United Kingdom": { "Edinburgh": [55.9533, -3.1883], "London": [51.5072, -0.1276] },
+        "United States": { "Anchorage": [61.2181, -149.9003], "Chicago": [41.8781, -87.6298], "Denver": [39.7392, -104.9903], "Honolulu": [21.3099, -157.8581], "Los Angeles": [34.0522, -118.2437], "New York": [40.7128, -74.006], "Phoenix": [33.4484, -112.074] }
+      };
+
+      const countrySelect = document.getElementById("country-select");
+      const citySelect = document.getElementById("city-select");
+      const deviceZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      let localZone = deviceZone;
+      let selectedZone = "";
+      let selectedPlace = "";
+      let selectedCoordinates = null;
+      let localCoordinates = null;
+
+      function findNearestListedCity([latitude, longitude]) {
+        const radians = Math.PI / 180;
+        let nearest = null;
+
+        Object.entries(coordinates).forEach(([country, cities]) => {
+          Object.entries(cities).forEach(([city, [cityLatitude, cityLongitude]]) => {
+            const latitudeDelta = (cityLatitude - latitude) * radians;
+            const longitudeDelta = (cityLongitude - longitude) * radians;
+            const haversine = Math.sin(latitudeDelta / 2) ** 2 +
+              Math.cos(latitude * radians) * Math.cos(cityLatitude * radians) *
+              Math.sin(longitudeDelta / 2) ** 2;
+            const distance = 6371 * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+
+            if (!nearest || distance < nearest.distance) {
+              const place = places[country].find((candidate) => candidate.city === city);
+              nearest = { city, country, zone: place.zone, distance };
+            }
+          });
+        });
+
+        return nearest && nearest.distance <= 100 ? nearest : null;
+      }
+
+      function formatTime(zone, options = {}) {
+        return new Intl.DateTimeFormat(undefined, {
+          timeZone: zone,
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+          ...options
+        });
+      }
+
+      function formatOffset(zone, date) {
+        const parts = new Intl.DateTimeFormat("en", {
+          timeZone: zone,
+          timeZoneName: "shortOffset"
+        }).formatToParts(date);
+        const offset = parts.find((part) => part.type === "timeZoneName");
+        return offset ? offset.value.replace("GMT", "UTC") : "";
+      }
+
+      function formatApparentSolarTime(placeCoordinates, date) {
+        const longitude = placeCoordinates[1];
+        const startOfYear = Date.UTC(date.getUTCFullYear(), 0, 0);
+        const dayOfYear = Math.floor((Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) - startOfYear) / 86400000);
+        const utcMinutes = date.getUTCHours() * 60 + date.getUTCMinutes() + date.getUTCSeconds() / 60;
+        const gamma = (2 * Math.PI / 365) * (dayOfYear - 1 + (date.getUTCHours() - 12) / 24);
+        const equationOfTime = 229.18 * (
+          0.000075 +
+          0.001868 * Math.cos(gamma) -
+          0.032077 * Math.sin(gamma) -
+          0.014615 * Math.cos(2 * gamma) -
+          0.040849 * Math.sin(2 * gamma)
+        );
+        const apparentMinutes = ((utcMinutes + longitude * 4 + equationOfTime) % 1440 + 1440) % 1440;
+        const solarDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) + apparentMinutes * 60000);
+        return new Intl.DateTimeFormat(undefined, {
+          timeZone: "UTC",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hourCycle: "h23"
+        }).format(solarDate);
+      }
+
+      function updateClocks() {
+        const now = new Date();
+        document.getElementById("local-clock").textContent = formatTime(localZone).format(now);
+        document.getElementById("local-date").textContent = new Intl.DateTimeFormat(undefined, {
+          timeZone: localZone,
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric"
+        }).format(now);
+        if (localCoordinates) {
+          document.getElementById("local-solar").textContent = formatApparentSolarTime(localCoordinates, now);
+        }
+
+        if (!selectedZone) return;
+
+        document.getElementById("city-clock").textContent = formatTime(selectedZone).format(now);
+        document.getElementById("city-date").textContent = new Intl.DateTimeFormat(undefined, {
+          timeZone: selectedZone,
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric"
+        }).format(now);
+        document.getElementById("city-solar").textContent = formatApparentSolarTime(selectedCoordinates, now);
+        document.getElementById("city-offset").textContent = `${formatOffset(selectedZone, now)} from UTC`;
+      }
+
+      document.getElementById("local-timezone").textContent = deviceZone.replaceAll("_", " ");
+
+      Object.keys(places).sort().forEach((country) => {
+        const option = document.createElement("option");
+        option.value = country;
+        option.textContent = country;
+        countrySelect.append(option);
+      });
+
+      countrySelect.addEventListener("change", () => {
+        const country = countrySelect.value;
+        citySelect.replaceChildren();
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = country ? "Select a city" : "Choose a country first";
+        citySelect.append(placeholder);
+        citySelect.disabled = !country;
+        selectedZone = "";
+        selectedPlace = "";
+        selectedCoordinates = null;
+        document.getElementById("city-clock").textContent = "--:--:--";
+        document.getElementById("city-date").textContent = "Your selected city's local time";
+        document.getElementById("city-solar").textContent = "Choose a city below";
+        document.getElementById("city-timezone").textContent = "Choose a city below";
+        document.getElementById("city-offset").textContent = "Select a country and city to get started";
+
+        if (!country) return;
+        places[country].forEach((place) => {
+          const option = document.createElement("option");
+          option.value = place.city;
+          option.textContent = place.city;
+          option.dataset.zone = place.zone;
+          citySelect.append(option);
+        });
+      });
+
+      citySelect.addEventListener("change", () => {
+        const option = citySelect.selectedOptions[0];
+        if (!option.value) return;
+        selectedPlace = option.value;
+        selectedZone = option.dataset.zone;
+        selectedCoordinates = coordinates[countrySelect.value][selectedPlace];
+        document.getElementById("city-timezone").textContent = `${selectedPlace}, ${countrySelect.value}`;
+        updateClocks();
+      });
+
+      document.getElementById("location-button").addEventListener("click", () => {
+        const status = document.getElementById("location-status");
+        if (!navigator.geolocation) {
+          status.textContent = "Location services aren't available in this browser";
+          return;
+        }
+
+        status.textContent = "Requesting location permission…";
+        navigator.geolocation.getCurrentPosition(
+          ({ coords }) => {
+            localCoordinates = [coords.latitude, coords.longitude];
+            const nearestCity = findNearestListedCity(localCoordinates);
+            if (nearestCity) {
+              localZone = nearestCity.zone;
+              document.getElementById("local-timezone").textContent = `${nearestCity.city}, ${nearestCity.country}`;
+              status.textContent = `Location matched to nearest listed city: ${nearestCity.city}, ${nearestCity.country}`;
+            } else {
+              localZone = deviceZone;
+              document.getElementById("local-timezone").textContent = deviceZone.replaceAll("_", " ");
+              status.textContent = `Coordinates received; no listed city within 100 km. Using device time zone (${deviceZone})`;
+            }
+            updateClocks();
+          },
+          (error) => {
+            const messages = {
+              1: "Location permission was denied; showing your device's time zone",
+              2: "Your location couldn't be determined; showing your device's time zone",
+              3: "Location request timed out; showing your device's time zone"
+            };
+            status.textContent = messages[error.code] || "Location couldn't be determined; showing your device's time zone";
+          },
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+        );
+      });
+
+      updateClocks();
+      window.setInterval(updateClocks, 1000);
+    </script>
+  </body>
+</html>
